@@ -2,6 +2,7 @@ package com.global.ct.frameinventory.web;
 
 import com.global.ct.frameinventory.frame.exception.DuplicateFrameException;
 import com.global.ct.frameinventory.frame.exception.FrameNotFoundException;
+import com.global.ct.frameinventory.frame.exception.InvalidCsvException;
 import com.global.ct.frameinventory.frame.exception.StaleFrameVersionException;
 import jakarta.validation.ConstraintViolationException;
 import java.net.URI;
@@ -18,6 +19,7 @@ import org.springframework.web.method.annotation.HandlerMethodValidationExceptio
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
 @RestControllerAdvice
 class ApiExceptionHandler {
@@ -71,6 +73,24 @@ class ApiExceptionHandler {
         );
         problem.setTitle("Invalid frame");
         problem.setType(URI.create("urn:problem:invalid-frame"));
+        return problem;
+    }
+
+    @ExceptionHandler(InvalidCsvException.class)
+    ProblemDetail handleInvalidCsv(InvalidCsvException exception) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, exception.getMessage());
+        problem.setTitle("Invalid CSV");
+        problem.setType(URI.create("urn:problem:invalid-csv"));
+        return problem;
+    }
+
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    ProblemDetail handleOversizedUpload(MaxUploadSizeExceededException exception) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(
+            HttpStatus.PAYLOAD_TOO_LARGE, "The CSV file exceeds the 2 MB upload limit"
+        );
+        problem.setTitle("CSV file is too large");
+        problem.setType(URI.create("urn:problem:csv-file-too-large"));
         return problem;
     }
 

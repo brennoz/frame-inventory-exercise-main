@@ -1,6 +1,7 @@
 package com.global.ct.frameinventory.frame.controller;
 
 import com.global.ct.frameinventory.frame.dto.CreateFrameRequest;
+import com.global.ct.frameinventory.frame.dto.FrameImportResponse;
 import com.global.ct.frameinventory.frame.dto.FrameResponse;
 import com.global.ct.frameinventory.frame.dto.FrameRevisionResponse;
 import com.global.ct.frameinventory.frame.dto.PageResponse;
@@ -10,6 +11,7 @@ import com.global.ct.frameinventory.frame.model.FrameStatus;
 import com.global.ct.frameinventory.frame.model.MediaType;
 import com.global.ct.frameinventory.frame.service.FrameCommandService;
 import com.global.ct.frameinventory.frame.service.FrameHistoryService;
+import com.global.ct.frameinventory.frame.service.FrameImportService;
 import com.global.ct.frameinventory.frame.service.FrameQueryService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
@@ -23,10 +25,12 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
+import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("/api/frames")
@@ -36,12 +40,14 @@ public class FrameController {
     private final FrameQueryService queryService;
     private final FrameCommandService commandService;
     private final FrameHistoryService historyService;
+    private final FrameImportService importService;
 
     public FrameController(FrameQueryService queryService, FrameCommandService commandService,
-                           FrameHistoryService historyService) {
+                           FrameHistoryService historyService, FrameImportService importService) {
         this.queryService = queryService;
         this.commandService = commandService;
         this.historyService = historyService;
+        this.importService = importService;
     }
 
     @GetMapping
@@ -69,6 +75,11 @@ public class FrameController {
             .buildAndExpand(frame.frameId())
             .toUri();
         return ResponseEntity.created(location).body(frame);
+    }
+
+    @PostMapping(value = "/import", consumes = org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE)
+    public FrameImportResponse importFrames(@RequestPart(value = "file", required = false) MultipartFile file) {
+        return importService.importCsv(file);
     }
 
     @PutMapping("/{frameId}")

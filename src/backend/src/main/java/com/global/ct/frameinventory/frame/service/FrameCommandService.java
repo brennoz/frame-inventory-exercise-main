@@ -8,7 +8,9 @@ import com.global.ct.frameinventory.frame.exception.FrameNotFoundException;
 import com.global.ct.frameinventory.frame.exception.StaleFrameVersionException;
 import com.global.ct.frameinventory.frame.model.ChangeSource;
 import com.global.ct.frameinventory.frame.model.Frame;
+import com.global.ct.frameinventory.frame.model.FrameData;
 import com.global.ct.frameinventory.frame.model.FrameFieldChange;
+import com.global.ct.frameinventory.frame.model.FrameImportOutcome;
 import com.global.ct.frameinventory.frame.model.FrameRevision;
 import com.global.ct.frameinventory.frame.model.RevisionAction;
 import com.global.ct.frameinventory.frame.repository.FrameRepository;
@@ -21,6 +23,7 @@ import java.util.List;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
@@ -84,6 +87,33 @@ public class FrameCommandService {
             frame, RevisionAction.UPDATED, ChangeSource.MANUAL, MANUAL_ACTOR, now, changes
         ));
         return FrameResponse.from(frame);
+    }
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public FrameImportOutcome upsertImportedFrame(String frameId, FrameData data) {
+        Frame frame = frameRepository.findById(frameId).orElse(null);
+        Instant now = now();
+        if (frame == null) {
+            frame = Frame.create(frameId, data, now);
+            frameRepository.saveAndFlush(frame);
+            List<FrameFieldChange> changes = new ArrayList<>();
+            changes.add(new FrameFieldChange("frameId", null, frameId));
+            changes.addAll(data.changesFrom(null));
+            revisionRepository.saveAndFlush(FrameRevision.record(
+                frame, RevisionAction.CREATED, ChangeSource.CSV, "csv-import", now, changes
+            ));
+            return FrameImportOutcome.CREATED;
+        }
+
+        List<FrameFieldChange> changes = frame.update(data, now);
+        if (changes.isEmpty()) {
+            return FrameImportOutcome.UNCHANGED;
+        }
+        frameRepository.flush();
+        revisionRepository.saveAndFlush(FrameRevision.record(
+            frame, RevisionAction.UPDATED, ChangeSource.CSV, "csv-import", now, changes
+        ));
+        return FrameImportOutcome.UPDATED;
     }
 
     private Instant now() {
