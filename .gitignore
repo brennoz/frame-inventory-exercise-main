@@ -1,0 +1,33 @@
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# Claude Code local settings
+.claude/
+
+# Backend (Gradle / Java)
+src/backend/.gradle/
+src/backend/build/
+src/backend/out/
+src/backend/bin/
+
+# Frontend (Node)
+src/frontend/node_modules/
+src/frontend/dist/
+src/frontend/.vite/
+src/frontend/*.local
+
+# Logs
+*.log
+
+# Env
+.env
+.env.local
+
+# Exercise brief supplied outside the submission
+/INSTRUCTIONS.md
