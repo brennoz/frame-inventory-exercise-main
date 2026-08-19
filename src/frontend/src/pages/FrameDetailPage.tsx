@@ -1,4 +1,4 @@
-import { ArrowLeft, CalendarClock, Crown, MapPin } from 'lucide-react'
+import { ArrowLeft, CalendarClock, Crown, History, MapPin, Pencil } from 'lucide-react'
 import { Link, useLocation, useParams } from 'react-router-dom'
 import { getFrame } from '../api/frames'
 import { FeedbackState } from '../components/ui/FeedbackState'
@@ -34,7 +34,12 @@ export function FrameDetailPage() {
       <Link className="back-link" to={returnTo}><ArrowLeft /> Back to frames</Link>
       <section className="detail-heading">
         <div><div className="detail-id-line"><h1>{data.frameId}</h1><StatusBadge status={data.status} />{data.premium && <span className="premium-badge"><Crown /> Premium</span>}</div><p>{data.station || data.address || 'No site description provided'}</p></div>
+        <Link className="button primary heading-action" to={`/frames/${encodeURIComponent(data.frameId)}/edit`} state={{ returnTo }}><Pencil /> Edit frame</Link>
       </section>
+      <nav className="detail-tabs" aria-label="Frame views">
+        <Link className="active" to={`/frames/${encodeURIComponent(data.frameId)}`} state={{ returnTo }} aria-current="page">Overview</Link>
+        <Link to={`/frames/${encodeURIComponent(data.frameId)}/history`} state={{ returnTo }}><History /> History</Link>
+      </nav>
 
       <div className="detail-grid">
         <section className="detail-section"><h2>Frame specification</h2><dl>

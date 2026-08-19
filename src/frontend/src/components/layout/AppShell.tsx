@@ -8,6 +8,13 @@ export function AppShell() {
   const location = useLocation()
   const isDetail = location.pathname !== '/frames'
   const framesPath = isDetail ? inventoryReturnPath(location.state) : '/frames'
+  const pageLabel = location.pathname === '/frames/new'
+    ? 'New frame'
+    : location.pathname.endsWith('/edit')
+      ? 'Edit frame'
+      : location.pathname.endsWith('/history')
+        ? 'History'
+        : 'Frame detail'
 
   useEffect(() => {
     const desktop = window.matchMedia('(min-width: 961px)')
@@ -39,7 +46,7 @@ export function AppShell() {
         <div className="breadcrumbs" aria-label="Breadcrumb">
           <span>Inventory</span><span>/</span>
           <Link to={framesPath}>Frames</Link>
-          {isDetail && <><span>/</span><strong>Frame detail</strong></>}
+          {isDetail && <><span>/</span><strong>{pageLabel}</strong></>}
         </div>
         <div className="user-summary" aria-label="Current user">
           <span className="avatar">DU</span>
