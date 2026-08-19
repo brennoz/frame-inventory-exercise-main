@@ -10,6 +10,8 @@ export function AppShell() {
   const framesPath = isDetail ? inventoryReturnPath(location.state) : '/frames'
   const pageLabel = location.pathname === '/frames/new'
     ? 'New frame'
+    : location.pathname === '/frames/import'
+      ? 'Import frames'
     : location.pathname.endsWith('/edit')
       ? 'Edit frame'
       : location.pathname.endsWith('/history')

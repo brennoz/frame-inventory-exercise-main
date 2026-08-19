@@ -87,3 +87,18 @@ export type FrameRevision = {
   occurredAt: string
   changes: FrameChange[]
 }
+
+export type FrameImportError = {
+  rowNumber: number
+  frameId: string | null
+  message: string
+}
+
+export type FrameImportResult = {
+  created: number
+  updated: number
+  unchanged: number
+  failed: number
+  errorsTruncated: boolean
+  errors: FrameImportError[]
+}

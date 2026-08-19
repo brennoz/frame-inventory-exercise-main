@@ -1,0 +1,5 @@
+frame_id,type_classic_digital,format,environment,site_no,station,address,region,country_code,town,postcode,longitude,latitude,status,status_reason,number_of_slots,distance_to_closest_school,pixel_height,pixel_width,premium
+1234604983,DIGITAL,DIGITAL_CROSSTRACK_48_SHEETS,UNDERGROUND,GRPX04033,Green Park,VICTORIA LINE PLATFORM 4 SOUTHBOUND,London,UK,London West End,W1J 9DZ,-0.14174505,51.50604991,MAINTENANCE,Gate 4C demo update,6,637,1200,1920,1
+1234605591,DIGITAL,DIGITAL_CROSSTRACK_48_SHEETS,UNDERGROUND,BONX04016,Bond Street,JUBILEE LINE PLATFORM 4 SOUTHBOUND,London,UK,London West End,W1R 1FE,-0.14940943,51.51507211,LIVE,,6,276,1200,1920,0
+GATE4C-DEMO-NEW,DIGITAL,D6,ROADSIDE,DEMO-SITE-1,,"10 Demo Street, London",London,UK,London,SW1A 1AA,-0.12760000,51.50720000,LIVE,Created from Gate 4C demo,2,300,1080,1920,1
+GATE4C-DEMO-BAD,CLASSIC,6_SHEET,ROADSIDE,DEMO-SITE-2,,20 Demo Street,London,UK,London,SW1A 2AA,,,RETIRED,Intentional invalid status,1,250,,,0

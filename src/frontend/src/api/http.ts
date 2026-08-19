@@ -36,6 +36,14 @@ export async function sendJson<T>(url: string, method: 'POST' | 'PUT', body: unk
   })
 }
 
+export async function sendForm<T>(url: string, body: FormData): Promise<T> {
+  return requestJson<T>(url, {
+    method: 'POST',
+    headers: { Accept: 'application/json' },
+    body,
+  })
+}
+
 async function requestJson<T>(url: string, init: RequestInit): Promise<T> {
   const response = await fetch(url, init)
 

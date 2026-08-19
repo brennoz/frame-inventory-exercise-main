@@ -1,5 +1,5 @@
-import type { CreateFrameRequest, Frame, FrameRevision, FrameSearch, PageResponse, UpdateFrameRequest } from '../types/frame'
-import { getJson, sendJson } from './http'
+import type { CreateFrameRequest, Frame, FrameImportResult, FrameRevision, FrameSearch, PageResponse, UpdateFrameRequest } from '../types/frame'
+import { getJson, sendForm, sendJson } from './http'
 
 export function searchFrames(search: FrameSearch, signal?: AbortSignal): Promise<PageResponse<Frame>> {
   const params = new URLSearchParams({ page: String(search.page), size: String(search.size) })
@@ -24,4 +24,10 @@ export function updateFrame(frameId: string, request: UpdateFrameRequest): Promi
 
 export function getFrameHistory(frameId: string, signal?: AbortSignal): Promise<FrameRevision[]> {
   return getJson<FrameRevision[]>(`/api/frames/${encodeURIComponent(frameId)}/history`, signal)
+}
+
+export function importFrames(file: File): Promise<FrameImportResult> {
+  const form = new FormData()
+  form.append('file', file)
+  return sendForm<FrameImportResult>('/api/frames/import', form)
 }

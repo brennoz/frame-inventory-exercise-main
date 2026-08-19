@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { FrameWritePayload } from '../types/frame'
-import { createFrame, updateFrame } from './frames'
+import { createFrame, importFrames, updateFrame } from './frames'
 import { ApiError } from './http'
 
 const payload: FrameWritePayload = {
@@ -31,5 +31,21 @@ describe('frame mutation API', () => {
     expect(fetchMock).toHaveBeenCalledWith('/api/frames/FRAME%2F2', expect.objectContaining({ method: 'PUT' }))
     expect(error).toBeInstanceOf(ApiError)
     expect((error as ApiError).fieldErrors).toEqual({ format: 'must not be blank' })
+  })
+
+  it('uploads CSV data without overriding the multipart boundary', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({
+      created: 1, updated: 0, unchanged: 0, failed: 0, errorsTruncated: false, errors: [],
+    }), { status: 200 }))
+    vi.stubGlobal('fetch', fetchMock)
+    const file = new File(['frame_id,format\nFRAME-1,D6'], 'frames.csv', { type: 'text/csv' })
+
+    await importFrames(file)
+
+    const [, request] = fetchMock.mock.calls[0] as [string, RequestInit]
+    expect(request.method).toBe('POST')
+    expect(request.body).toBeInstanceOf(FormData)
+    expect((request.body as FormData).get('file')).toBe(file)
+    expect(request.headers).toEqual({ Accept: 'application/json' })
   })
 })

@@ -1,4 +1,4 @@
-import { ChevronLeft, ChevronRight, Plus, Search, SlidersHorizontal, X } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Plus, Search, SlidersHorizontal, Upload, X } from 'lucide-react'
 import { type FormEvent, useEffect, useState } from 'react'
 import { Link, useLocation, useSearchParams } from 'react-router-dom'
 import { searchFrames } from '../api/frames'
@@ -73,7 +73,7 @@ export function FrameInventoryPage() {
     <div className="workspace-page">
       <section className="page-heading">
         <div><h1>Frames</h1><p>{data ? `${data.totalElements.toLocaleString()} frames found` : 'Search and inspect inventory frames'}</p></div>
-        <Link className="button primary heading-action" to="/frames/new" state={navigationState}><Plus /> New frame</Link>
+        <div className="heading-actions"><Link className="button secondary" to="/frames/import" state={navigationState}><Upload /> Import</Link><Link className="button primary" to="/frames/new" state={navigationState}><Plus /> New frame</Link></div>
       </section>
 
       <div className="inventory-layout">
