@@ -100,6 +100,8 @@ For local module development, start MariaDB with `docker compose up -d mariadb-p
 
 Entire is enabled for this repository and configured to sync checkpoints to `origin`. At present, however, Entire reports zero checkpoints on `main`, no active session in this worktree, and the remote repository exposes only the `main` branch. The existing commit history is available for review, but the Codex sessions that produced those commits were not captured and cannot currently be reviewed alongside the code.
 
+A reconstructed account of the implementation decisions, review gates, and commit history is available in the [implementation journal](docs/implementation-journal.md). It is explicitly a curated retrospective rather than a verbatim session transcript.
+
 Reviewers can confirm the current state with:
 
 ```bash
