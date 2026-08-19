@@ -27,6 +27,12 @@ services:
     depends_on:
       mariadb-primary:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "--silent", "--show-error", "http://localhost:8080/actuator/health/readiness"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+      start_period: 20s
     networks:
       - frame-inventory
 
@@ -43,7 +49,8 @@ services:
       - ./src/frontend/public:/app/public
       - ./src/frontend/index.html:/app/index.html
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
     networks:
       - frame-inventory
 
@@ -51,7 +58,7 @@ services:
     image: mariadb:11.4
     container_name: frame-inventory-mariadb-primary
     ports:
-      - "3306:3306"
+      - "127.0.0.1:3306:3306"
     environment:
       MARIADB_ROOT_PASSWORD: root
       MARIADB_DATABASE: frames

@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.anyOf;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.matchesPattern;
 import static org.hamcrest.Matchers.startsWith;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -115,6 +116,40 @@ class FrameControllerIntegrationTest extends DatabaseIntegrationTest {
     @Test
     void configuresTheApplicationExecutorToUseVirtualThreads() throws Exception {
         assertThat(applicationTaskExecutor.submitCompletable(() -> Thread.currentThread().isVirtual()).get()).isTrue();
+    }
+
+    @Test
+    void addsARequestIdToApiResponses() throws Exception {
+        mockMvc.perform(get("/api/frames/FRAME-001"))
+            .andExpect(status().isOk())
+            .andExpect(header().string("X-Request-ID", matchesPattern(
+                "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+            )));
+    }
+
+    @Test
+    void preservesValidRequestIdsAndReplacesUnsafeOnes() throws Exception {
+        mockMvc.perform(get("/api/frames/FRAME-001")
+                .header("X-Request-ID", "manual-check_123"))
+            .andExpect(status().isOk())
+            .andExpect(header().string("X-Request-ID", "manual-check_123"));
+
+        mockMvc.perform(get("/api/frames/FRAME-001")
+                .header("X-Request-ID", "unsafe request id"))
+            .andExpect(status().isOk())
+            .andExpect(header().string("X-Request-ID", matchesPattern(
+                "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+            )));
+    }
+
+    @Test
+    void exposesLivenessAndDatabaseReadinessProbes() throws Exception {
+        mockMvc.perform(get("/actuator/health/liveness"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.status").value("UP"));
+        mockMvc.perform(get("/actuator/health/readiness"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.status").value("UP"));
     }
 
     @Test
