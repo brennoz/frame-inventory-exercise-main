@@ -1,12 +1,21 @@
 package com.global.ct.frameinventory.frame.controller;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.anyOf;
+import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.startsWith;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.global.ct.frameinventory.DatabaseIntegrationTest;
+import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executors;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,6 +24,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.core.task.AsyncTaskExecutor;
 import org.springframework.jdbc.core.simple.JdbcClient;
+import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
 @SpringBootTest
@@ -105,6 +115,164 @@ class FrameControllerIntegrationTest extends DatabaseIntegrationTest {
         assertThat(applicationTaskExecutor.submitCompletable(() -> Thread.currentThread().isVirtual()).get()).isTrue();
     }
 
+    @Test
+    void createsAFrameAndRecordsItsHistory() throws Exception {
+        mockMvc.perform(post("/api/frames")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(createRequest("FRAME-004")))
+            .andExpect(status().isCreated())
+            .andExpect(header().string("Location", startsWith("http://localhost/api/frames/FRAME-004")))
+            .andExpect(jsonPath("$.frameId").value("FRAME-004"))
+            .andExpect(jsonPath("$.version").value(0));
+
+        mockMvc.perform(get("/api/frames/FRAME-004/history"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$", hasSize(1)))
+            .andExpect(jsonPath("$[0].action").value("CREATED"))
+            .andExpect(jsonPath("$[0].source").value("MANUAL"))
+            .andExpect(jsonPath("$[0].actor").value("demo-user"))
+            .andExpect(jsonPath("$[0].changes[0].fieldName").value("frameId"))
+            .andExpect(jsonPath("$[0].changes[0].newValue").value("FRAME-004"));
+    }
+
+    @Test
+    void rejectsDuplicateFrameIds() throws Exception {
+        mockMvc.perform(post("/api/frames")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(createRequest("FRAME-001")))
+            .andExpect(status().isConflict())
+            .andExpect(jsonPath("$.title").value("Frame already exists"));
+    }
+
+    @Test
+    void treatsEquivalentDatabaseScaledCoordinatesAsUnchanged() throws Exception {
+        mockMvc.perform(post("/api/frames")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(createRequest("FRAME-004")))
+            .andExpect(status().isCreated());
+
+        mockMvc.perform(put("/api/frames/FRAME-004")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(equivalentCreatedFrameUpdateRequest()))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.version").value(0));
+
+        mockMvc.perform(get("/api/frames/FRAME-004/history"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$", hasSize(1)));
+    }
+
+    @Test
+    void updatesOnlyChangedFieldsAndRecordsTheirHistory() throws Exception {
+        mockMvc.perform(put("/api/frames/FRAME-001")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(updateRequest(0, "Piccadilly Circus", "MAINTENANCE")))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.station").value("Piccadilly Circus"))
+            .andExpect(jsonPath("$.status").value("MAINTENANCE"))
+            .andExpect(jsonPath("$.version").value(1));
+
+        mockMvc.perform(get("/api/frames/FRAME-001/history"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$", hasSize(1)))
+            .andExpect(jsonPath("$[0].action").value("UPDATED"))
+            .andExpect(jsonPath("$[0].changes", hasSize(2)))
+            .andExpect(jsonPath("$[0].changes[0].fieldName").value("station"))
+            .andExpect(jsonPath("$[0].changes[0].oldValue").value("Green Park"))
+            .andExpect(jsonPath("$[0].changes[0].newValue").value("Piccadilly Circus"))
+            .andExpect(jsonPath("$[0].changes[1].fieldName").value("status"));
+    }
+
+    @Test
+    void doesNotCreateHistoryForAnIdenticalUpdate() throws Exception {
+        mockMvc.perform(put("/api/frames/FRAME-001")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(updateRequest(0, "Green Park", "LIVE")))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.version").value(0));
+
+        mockMvc.perform(get("/api/frames/FRAME-001/history"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$", hasSize(0)));
+    }
+
+    @Test
+    void returnsHistoryNewestFirst() throws Exception {
+        mockMvc.perform(put("/api/frames/FRAME-001")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(updateRequest(0, "First station", "LIVE")))
+            .andExpect(status().isOk());
+        mockMvc.perform(put("/api/frames/FRAME-001")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(updateRequest(1, "Second station", "BLOCKED")))
+            .andExpect(status().isOk());
+
+        mockMvc.perform(get("/api/frames/FRAME-001/history"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$", hasSize(2)))
+            .andExpect(jsonPath("$[0].changes[0].oldValue").value("First station"))
+            .andExpect(jsonPath("$[0].changes[0].newValue").value("Second station"))
+            .andExpect(jsonPath("$[1].changes[0].oldValue").value("Green Park"))
+            .andExpect(jsonPath("$[1].changes[0].newValue").value("First station"));
+    }
+
+    @Test
+    void rejectsStaleUpdatesWithoutChangingTheFrame() throws Exception {
+        mockMvc.perform(put("/api/frames/FRAME-001")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(updateRequest(9, "Stale station", "BLOCKED")))
+            .andExpect(status().isConflict())
+            .andExpect(jsonPath("$.title").value("Frame was modified"));
+
+        mockMvc.perform(get("/api/frames/FRAME-001"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.station").value("Green Park"))
+            .andExpect(jsonPath("$.version").value(0));
+    }
+
+    @Test
+    void allowsOnlyOneOfTwoConcurrentUpdatesWithTheSameVersion() throws Exception {
+        CountDownLatch start = new CountDownLatch(1);
+        try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
+            var first = executor.submit(() -> performUpdateAfter(start, "Concurrent A"));
+            var second = executor.submit(() -> performUpdateAfter(start, "Concurrent B"));
+            start.countDown();
+
+            assertThat(List.of(first.get(), second.get())).containsExactlyInAnyOrder(200, 409);
+        }
+
+        mockMvc.perform(get("/api/frames/FRAME-001/history"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$", hasSize(1)));
+        mockMvc.perform(get("/api/frames/FRAME-001"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.station").value(anyOf(equalTo("Concurrent A"), equalTo("Concurrent B"))))
+            .andExpect(jsonPath("$.version").value(1));
+    }
+
+    @Test
+    void returnsProblemDetailForInvalidFrameData() throws Exception {
+        mockMvc.perform(post("/api/frames")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {"frameId":"","mediaType":"DIGITAL","environment":"RAIL","countryCode":"UK","status":"LIVE"}
+                    """))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.title").value("Invalid frame"))
+            .andExpect(jsonPath("$.errors.frameId").exists())
+            .andExpect(jsonPath("$.errors.format").exists());
+    }
+
+    @Test
+    void rejectsCoordinatePrecisionThatTheDatabaseWouldRound() throws Exception {
+        mockMvc.perform(post("/api/frames")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(createRequest("FRAME-004").replace("-0.1757", "-0.17570001")))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.title").value("Invalid frame"))
+            .andExpect(jsonPath("$.errors.longitude").exists());
+    }
+
     private void insertFrame(String id, String mediaType, String format, String environment,
                              String station, String town, String status, String updatedAt) {
         jdbcClient.sql("""
@@ -125,5 +293,83 @@ class FrameControllerIntegrationTest extends DatabaseIntegrationTest {
             .param("status", status)
             .param("updatedAt", updatedAt)
             .update();
+    }
+
+    private int performUpdateAfter(CountDownLatch start, String station) throws Exception {
+        start.await();
+        return mockMvc.perform(put("/api/frames/FRAME-001")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(updateRequest(0, station, "LIVE")))
+            .andReturn()
+            .getResponse()
+            .getStatus();
+    }
+
+    private String createRequest(String frameId) {
+        return """
+            {
+              "frameId": "%s",
+              "mediaType": "DIGITAL",
+              "format": "D6",
+              "environment": "RAIL",
+              "siteNumber": "SITE-1",
+              "station": "Paddington",
+              "address": "Praed Street",
+              "region": "London",
+              "countryCode": "UK",
+              "town": "London",
+              "postcode": "W2 1HQ",
+              "longitude": -0.1757,
+              "latitude": 51.5154,
+              "status": "LIVE",
+              "numberOfSlots": 6,
+              "distanceToClosestSchool": 500,
+              "pixelHeight": 1920,
+              "pixelWidth": 1080,
+              "premium": false
+            }
+            """.formatted(frameId);
+    }
+
+    private String updateRequest(long version, String station, String status) {
+        return """
+            {
+              "version": %d,
+              "mediaType": "DIGITAL",
+              "format": "D6",
+              "environment": "UNDERGROUND",
+              "station": "%s",
+              "countryCode": "UK",
+              "town": "London",
+              "status": "%s",
+              "premium": false
+            }
+            """.formatted(version, station, status);
+    }
+
+    private String equivalentCreatedFrameUpdateRequest() {
+        return """
+            {
+              "version": 0,
+              "mediaType": "DIGITAL",
+              "format": "D6",
+              "environment": "RAIL",
+              "siteNumber": "SITE-1",
+              "station": "Paddington",
+              "address": "Praed Street",
+              "region": "London",
+              "countryCode": "UK",
+              "town": "London",
+              "postcode": "W2 1HQ",
+              "longitude": -0.1757000,
+              "latitude": 51.5154000,
+              "status": "LIVE",
+              "numberOfSlots": 6,
+              "distanceToClosestSchool": 500,
+              "pixelHeight": 1920,
+              "pixelWidth": 1080,
+              "premium": false
+            }
+            """;
     }
 }

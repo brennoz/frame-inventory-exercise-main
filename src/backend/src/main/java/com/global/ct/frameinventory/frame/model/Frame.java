@@ -9,6 +9,7 @@ import jakarta.persistence.Table;
 import jakarta.persistence.Version;
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.List;
 
 @Entity
 @Table(name = "frames")
@@ -89,6 +90,54 @@ public class Frame {
     private long version;
 
     protected Frame() {
+    }
+
+    public static Frame create(String frameId, FrameData data, Instant now) {
+        Frame frame = new Frame();
+        frame.frameId = frameId;
+        frame.apply(data);
+        frame.createdAt = now;
+        frame.updatedAt = now;
+        return frame;
+    }
+
+    public List<FrameFieldChange> update(FrameData data, Instant now) {
+        List<FrameFieldChange> changes = data.changesFrom(data());
+        if (!changes.isEmpty()) {
+            apply(data);
+            updatedAt = now;
+        }
+        return changes;
+    }
+
+    public FrameData data() {
+        return new FrameData(
+            mediaType, format, environment, siteNumber, station, address, region, countryCode,
+            town, postcode, longitude, latitude, status, statusReason, numberOfSlots,
+            distanceToClosestSchool, pixelHeight, pixelWidth, premium
+        );
+    }
+
+    private void apply(FrameData data) {
+        mediaType = data.mediaType();
+        format = data.format();
+        environment = data.environment();
+        siteNumber = data.siteNumber();
+        station = data.station();
+        address = data.address();
+        region = data.region();
+        countryCode = data.countryCode();
+        town = data.town();
+        postcode = data.postcode();
+        longitude = data.longitude();
+        latitude = data.latitude();
+        status = data.status();
+        statusReason = data.statusReason();
+        numberOfSlots = data.numberOfSlots();
+        distanceToClosestSchool = data.distanceToClosestSchool();
+        pixelHeight = data.pixelHeight();
+        pixelWidth = data.pixelWidth();
+        premium = data.premium();
     }
 
     public String getFrameId() { return frameId; }
