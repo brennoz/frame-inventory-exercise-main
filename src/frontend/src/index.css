@@ -1,8 +1,47 @@
+@font-face { font-family: Inter; src: url('./assets/fonts/Inter-Regular.ttf') format('truetype'); font-weight: 400; font-display: swap; }
+@font-face { font-family: Inter; src: url('./assets/fonts/Inter-Medium.ttf') format('truetype'); font-weight: 500; font-display: swap; }
+@font-face { font-family: Inter; src: url('./assets/fonts/Inter-SemiBold.ttf') format('truetype'); font-weight: 600; font-display: swap; }
+@font-face { font-family: Inter; src: url('./assets/fonts/Inter-Bold.ttf') format('truetype'); font-weight: 700; font-display: swap; }
+
 :root {
-  font-family: system-ui, 'Segoe UI', Roboto, sans-serif;
-  color-scheme: light dark;
+  font-family: Inter, Arial, sans-serif;
+  color: #0f1820;
+  background: #f7f9fa;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  --white: #fff;
+  --gray-50: #f7f9fa;
+  --gray-100: #f2f5f7;
+  --gray-200: #d4dbdf;
+  --gray-300: #c3cbd2;
+  --gray-700: #7e8e9d;
+  --gray-900: #5b7082;
+  --gray-1000: #3e5263;
+  --gray-1400: #1c2936;
+  --gray-1600: #0f1820;
+  --blue-50: #f2f7fc;
+  --blue-100: #e5f0f9;
+  --blue-1000: #046ac4;
+  --blue-1200: #03559d;
+  --blue-1400: #024076;
+  --green-100: #e0ecd2;
+  --green-800: #518b26;
+  --orange-100: #fdf0e7;
+  --orange-1400: #92430b;
+  --red-100: #f8e0de;
+  --red-800: #dd372a;
+  --red-1000: #a0150a;
+  --border: #d4dbdf;
+  --muted: #5b7082;
+  --primary: #046ac4;
+  --radius: 4px;
+  --shadow: 0 2px 4px -1px rgb(0 34 63 / 15%), 0 1px 2px -1px rgb(0 34 63 / 10%);
 }
 
-body {
-  margin: 0;
-}
+* { box-sizing: border-box; }
+html, body, #root { width: 100%; max-width: 100%; min-height: 100%; overflow-x: clip; }
+body { margin: 0; min-width: 320px; min-height: 100vh; }
+button, input, select { font: inherit; }
+button, a { -webkit-tap-highlight-color: transparent; }
+button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible { outline: 3px solid #b3d2ed; outline-offset: 2px; }
+a { color: inherit; }
