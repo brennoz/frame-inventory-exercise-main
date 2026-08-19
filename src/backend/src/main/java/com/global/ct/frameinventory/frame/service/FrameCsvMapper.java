@@ -1,6 +1,7 @@
 package com.global.ct.frameinventory.frame.service;
 
 import com.global.ct.frameinventory.frame.dto.CreateFrameRequest;
+import com.global.ct.frameinventory.frame.exception.InvalidCsvRowException;
 import com.global.ct.frameinventory.frame.model.FrameEnvironment;
 import com.global.ct.frameinventory.frame.model.FrameStatus;
 import com.global.ct.frameinventory.frame.model.MediaType;
@@ -60,7 +61,7 @@ class FrameCsvMapper {
                 .sorted(Comparator.comparing(violation -> violation.getPropertyPath().toString()))
                 .map(violation -> violation.getPropertyPath() + ": " + violation.getMessage())
                 .collect(Collectors.joining("; "));
-            throw new IllegalArgumentException(detail);
+            throw new InvalidCsvRowException(detail);
         }
         return new FrameImportRow(request.frameId(), request.toData());
     }
@@ -68,7 +69,7 @@ class FrameCsvMapper {
     private String required(CSVRecord record, String header) {
         String value = value(record, header);
         if (value.isEmpty()) {
-            throw new IllegalArgumentException(header + " is required");
+            throw new InvalidCsvRowException(header + " is required");
         }
         return value;
     }
@@ -86,7 +87,7 @@ class FrameCsvMapper {
         try {
             return new BigDecimal(value);
         } catch (NumberFormatException exception) {
-            throw new IllegalArgumentException(header + " must be a decimal number");
+            throw new InvalidCsvRowException(header + " must be a decimal number");
         }
     }
 
@@ -98,7 +99,7 @@ class FrameCsvMapper {
         try {
             return Integer.valueOf(value);
         } catch (NumberFormatException exception) {
-            throw new IllegalArgumentException(header + " must be an integer");
+            throw new InvalidCsvRowException(header + " must be an integer");
         }
     }
 
@@ -106,7 +107,7 @@ class FrameCsvMapper {
         return switch (required(record, header).toLowerCase(Locale.ROOT)) {
             case "1", "true" -> true;
             case "0", "false" -> false;
-            default -> throw new IllegalArgumentException(header + " must be 0, 1, true, or false");
+            default -> throw new InvalidCsvRowException(header + " must be 0, 1, true, or false");
         };
     }
 
@@ -115,7 +116,7 @@ class FrameCsvMapper {
         try {
             return Enum.valueOf(type, value.toUpperCase(Locale.ROOT));
         } catch (IllegalArgumentException exception) {
-            throw new IllegalArgumentException(header + " has unsupported value '" + value + "'");
+            throw new InvalidCsvRowException(header + " has unsupported value '" + value + "'");
         }
     }
 

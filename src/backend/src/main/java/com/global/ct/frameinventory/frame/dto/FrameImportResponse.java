@@ -7,6 +7,7 @@ public record FrameImportResponse(
     int updated,
     int unchanged,
     int failed,
+    boolean errorsTruncated,
     List<FrameImportErrorResponse> errors
 ) {
 }

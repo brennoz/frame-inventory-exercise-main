@@ -49,6 +49,7 @@ class FrameImportControllerIntegrationTest extends DatabaseIntegrationTest {
             .andExpect(jsonPath("$.updated").value(0))
             .andExpect(jsonPath("$.unchanged").value(0))
             .andExpect(jsonPath("$.failed").value(0))
+            .andExpect(jsonPath("$.errorsTruncated").value(false))
             .andExpect(jsonPath("$.errors", hasSize(0)));
 
         String address = jdbcClient.sql("select address from frames where frame_id = 'CSV-001'")
