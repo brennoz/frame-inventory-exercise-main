@@ -51,10 +51,10 @@ public class Frame {
     @Column(name = "postcode", length = 16)
     private String postcode;
 
-    @Column(name = "longitude", precision = 10, scale = 7)
+    @Column(name = "longitude", precision = 11, scale = 8)
     private BigDecimal longitude;
 
-    @Column(name = "latitude", precision = 10, scale = 7)
+    @Column(name = "latitude", precision = 10, scale = 8)
     private BigDecimal latitude;
 
     @Enumerated(EnumType.STRING)

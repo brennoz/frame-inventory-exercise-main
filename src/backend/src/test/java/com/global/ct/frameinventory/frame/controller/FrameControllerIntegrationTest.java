@@ -8,11 +8,13 @@ import static org.hamcrest.Matchers.startsWith;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.global.ct.frameinventory.DatabaseIntegrationTest;
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
@@ -267,10 +269,49 @@ class FrameControllerIntegrationTest extends DatabaseIntegrationTest {
     void rejectsCoordinatePrecisionThatTheDatabaseWouldRound() throws Exception {
         mockMvc.perform(post("/api/frames")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(createRequest("FRAME-004").replace("-0.1757", "-0.17570001")))
+                .content(createRequest("FRAME-004").replace("-0.1757", "-0.175700001")))
             .andExpect(status().isBadRequest())
             .andExpect(jsonPath("$.title").value("Invalid frame"))
             .andExpect(jsonPath("$.errors.longitude").exists());
+    }
+
+    @Test
+    void preservesEightDecimalCoordinatePrecision() throws Exception {
+        mockMvc.perform(post("/api/frames")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(createRequest("FRAME-004")
+                    .replace("-0.1757", "-0.17570001")
+                    .replace("51.5154", "51.51540001")))
+            .andExpect(status().isCreated());
+
+        BigDecimal longitude = jdbcClient.sql("select longitude from frames where frame_id = 'FRAME-004'")
+            .query(BigDecimal.class)
+            .single();
+        BigDecimal latitude = jdbcClient.sql("select latitude from frames where frame_id = 'FRAME-004'")
+            .query(BigDecimal.class)
+            .single();
+        assertThat(longitude).isEqualByComparingTo("-0.17570001");
+        assertThat(latitude).isEqualByComparingTo("51.51540001");
+    }
+
+    @Test
+    void rejectsFrameIdsThatCannotBeUsedAsPathSegments() throws Exception {
+        mockMvc.perform(post("/api/frames")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(createRequest("FRAME/004")))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.title").value("Invalid frame"))
+            .andExpect(jsonPath("$.errors.frameId").exists());
+    }
+
+    @Test
+    void returnsProblemDetailForInvalidRequestBodyValues() throws Exception {
+        mockMvc.perform(post("/api/frames")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(createRequest("FRAME-004").replace("DIGITAL", "SCREEN")))
+            .andExpect(status().isBadRequest())
+            .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
+            .andExpect(jsonPath("$.title").value("Invalid frame"));
     }
 
     private void insertFrame(String id, String mediaType, String format, String environment,

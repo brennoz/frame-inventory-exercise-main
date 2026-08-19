@@ -11,6 +11,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.method.annotation.HandlerMethodValidationException;
@@ -60,6 +61,16 @@ class ApiExceptionHandler {
         problem.setTitle("Invalid frame");
         problem.setType(URI.create("urn:problem:invalid-frame"));
         problem.setProperty("errors", errors);
+        return problem;
+    }
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    ProblemDetail handleUnreadableBody(HttpMessageNotReadableException exception) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(
+            HttpStatus.BAD_REQUEST, "Request body contains malformed JSON or an unsupported field value"
+        );
+        problem.setTitle("Invalid frame");
+        problem.setType(URI.create("urn:problem:invalid-frame"));
         return problem;
     }
 
