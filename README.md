@@ -96,6 +96,21 @@ docker compose run --rm --no-deps frontend npm run build
 
 For local module development, start MariaDB with `docker compose up -d mariadb-primary`, run `./gradlew bootRun` from `src/backend`, and run `npm run dev` from `src/frontend`.
 
+## Entire collaboration record
+
+Entire is enabled for this repository and configured to sync checkpoints to `origin`. At present, however, Entire reports zero checkpoints on `main`, no active session in this worktree, and the remote repository exposes only the `main` branch. The existing commit history is available for review, but the Codex sessions that produced those commits were not captured and cannot currently be reviewed alongside the code.
+
+Reviewers can confirm the current state with:
+
+```bash
+entire status
+entire checkpoint list
+entire session current
+git ls-remote origin
+```
+
+`entire doctor` currently reports that the Codex hooks require approval. Future sessions can be captured after approving the Entire hooks through `/hooks` in Codex. Once checkpoints exist, use `entire checkpoint list` and `entire checkpoint explain <commit-or-checkpoint>` to inspect them.
+
 ## Operations and safeguards
 
 - Java virtual threads are enabled for request handling. They improve blocking-I/O concurrency but do not replace transactions, optimistic locking, or the bounded database connection pool.
