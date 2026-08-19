@@ -1,4 +1,4 @@
-package com.global.ct.frameinventory;
+package com.global.ct.frameinventory.health.controller;
 
 import java.time.Instant;
 import java.util.Map;

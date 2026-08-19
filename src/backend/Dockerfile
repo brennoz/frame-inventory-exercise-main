@@ -3,7 +3,7 @@ WORKDIR /workspace
 COPY gradle gradle
 COPY gradlew settings.gradle build.gradle ./
 COPY src src
-RUN ./gradlew --no-daemon bootJar
+RUN --mount=type=cache,target=/root/.gradle ./gradlew --no-daemon bootJar
 
 FROM eclipse-temurin:21-jdk
 WORKDIR /app

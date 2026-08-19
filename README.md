@@ -20,19 +20,14 @@ docker compose up --build
 | Service               | Host port | Container port | Notes                                                  |
 |-----------------------|-----------|----------------|--------------------------------------------------------|
 | frontend              | 3000      | 3000           | Vite dev server, proxies `/api` to the backend         |
-| backend               | 8080      | 8080           | Spring Boot, exposes `GET /api/health`                 |
-| mongodb               | 27017     | 27017          | Intended for frame data                                |
-| mariadb-primary       | 3306      | 3306           | Intended for frame data                                |
-| opensearch            | 9200      | 9200           | Single-node, security plugin disabled for local use    |
-| opensearch-dashboards | 5601      | 5601           | UI for the OpenSearch cluster above                    |
+| backend               | 8080      | 8080           | Spring Boot API and health endpoint                    |
+| mariadb-primary       | 3306      | 3306           | Frame data for Docker and local backend development    |
 
 ### Credentials
 
 | Service               | User       | Password       | Database         |
 |-----------------------|------------|----------------|------------------|
-| mongodb               | `root`     | `root`         | `frames`         |
 | mariadb-primary       | `app`      | `app`          | `frames`         |
-| opensearch            | n/a (security disabled)                                |
 
 ## Smoke test
 
